@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filtered_items', type=str, required=True, help='Path to filtered items file [csv format]')
+    parser.add_argument('--filtered_items', type=str, required=True, help='Path to file with set of filtered items [pickle format]')
     parser.add_argument('--link_annotations', type=str, required=True, help='Path to link annotated text file [json format]')
     parser.add_argument('--page_map', type=str, required=True, help='Path to page to item map file [csv format]')
     args = parser.parse_args()
@@ -26,18 +26,12 @@ def main():
 
     # Load filtered items
     print("Loading files...")
-    df_filtered = pd.read_csv(FILTERED_ITEMS_PATH).copy()
+    filtered_items = pickle.load(open(FILTERED_ITEMS_PATH, "rb"))
     df_link_annotations = pd.read_json(LINK_ANNOTATIONS_PATH, lines=True, chunksize=CHUNKSIZE)
     df_page_map = pd.read_csv(PAGE_MAP_PATH, index_col=0)
 
     # Get size of df_link_annotations
     df_link_annotations_no_lines = sum(1 for line in open(LINK_ANNOTATIONS_PATH))
-
-    # Get all qids from filtered items
-    all_qids = set(df_filtered['qid'].values)
-    all_qids.update(df_filtered["Work_of_art"].values)
-
-    del df_filtered
 
     # Get all pages from filtered items
     all_pages = set(df_page_map.index.values)
@@ -55,7 +49,7 @@ def main():
 
             record_item_id = df_page_map.loc[record.page_id, 'item_id']
 
-            if record_item_id not in all_qids:
+            if record_item_id not in filtered_items:
                 continue
 
             for section in record.sections:
@@ -68,7 +62,7 @@ def main():
 
                     link_item_id = df_page_map.loc[link_page_id, 'item_id']
 
-                    if link_item_id in all_qids:
+                    if link_item_id in filtered_items:
                         links[
                             (
                                 section["link_offsets"][link_ind],
