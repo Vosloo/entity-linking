@@ -1,5 +1,6 @@
 import argparse
 import pickle
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -8,16 +9,18 @@ from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--filtered_items', type=str, required=True, help='Path to filtered items file [csv format]]')
-    parser.add_argument('--link_annotations', type=str, required=True, help='Path to link annotated text file [json format]]')
+    parser.add_argument('--filtered_items', type=str, required=True, help='Path to filtered items file [csv format]')
+    parser.add_argument('--link_annotations', type=str, required=True, help='Path to link annotated text file [json format]')
     parser.add_argument('--page_map', type=str, required=True, help='Path to page to item map file [csv format]')
-    parser.add_argument('--output', type=str, required=True, help='Path where to save dataset [pickle format]]')
     args = parser.parse_args()
 
     FILTERED_ITEMS_PATH = Path(args.filtered_items)
     LINK_ANNOTATIONS_PATH = Path(args.link_annotations)
     PAGE_MAP_PATH = Path(args.page_map)
-    DATASET_FOLDER_PATH = Path(args.output)
+    DATASET_FOLDER_PATH = (Path(__file__).parents[1] / 'data' / 'dataset')
+    
+    # Create path if not exists
+    DATASET_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
     CHUNKSIZE = 1000
 
@@ -76,7 +79,7 @@ def main():
                 if links:
                    dataset.append((section["text"], {"links": links}))
 
-    DATASET_PATH = DATASET_FOLDER_PATH / 'dataset.pkl' 
+    DATASET_PATH = DATASET_FOLDER_PATH / f'{time.strftime("%Y-%m-%dT%H%M%S")}_dataset.pkl' 
     print(f"Saving generated dataset to {DATASET_PATH}")
     pickle.dump(dataset, open(DATASET_PATH, "wb"))
 
